@@ -1,96 +1,102 @@
-package service;
-
-
-import model.Occurrence;
+package src.service;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class LfuCache {
-    private Occurrence head;
-    private Occurrence tail;
+    private Node head;
+    private Node tail;
+    private Map<Integer, Node> map;
     private int capacity;
-
-    private Map<Integer, Occurrence> map;
 
     public LfuCache(int capacity) {
         this.capacity = capacity;
-        this.map = new HashMap<>();
+        this.map = new HashMap<Integer, Node>();
     }
 
-
-    public void put(int key, Double exchanges) {
-        if (map.containsKey(key)) {
-            Occurrence occurrence = map.get(key);
-            occurrence.exchanges = exchanges;
-            occurrence.frequency = occurrence.frequency + 1;
-            removeOccurrence(occurrence);
-            addOccurrenceWithUpdatedFrequency(occurrence);
-        } else {
-            if (map.size() >= capacity) {
-                map.remove(head.key);
-                removeOccurrence(head);
-            }
-            Occurrence occurrence = new Occurrence(key, exchanges, 1);
-            addOccurrenceWithUpdatedFrequency(occurrence);
-            map.put(key, occurrence);
-        }
+    public boolean contains(int key) {
+        return map.containsKey(key);
     }
 
     public String get(int key) {
-        if (map.get(key) == null) {
+
+        if (!map.containsKey(key)) {
             return null;
         }
-        Occurrence occurrence = map.get(key);
-        removeOccurrence(occurrence);
-        occurrence.frequency = occurrence.frequency + 1;
-        addOccurrenceWithUpdatedFrequency(occurrence);
-        return occurrence.exchanges;
+
+        Node item = map.get(key);
+        removeNode(item);
+        item.frequency = item.frequency + 1;
+        addNodeWithUpdatedFrequency(item);
+
+        return item.exchanges;
     }
 
-    private void removeOccurrence(Occurrence occurrence) {
-        if (occurrence.prev != null) {
-            occurrence.prev.next = occurrence.next;
-        } else {
-            head = occurrence.next;
-        }
+    public void put(int key, String exchanges) {
 
-        if (occurrence.next != null) {
-            occurrence.next.prev = occurrence.prev;
+        if (map.containsKey(key)) {
+            Node item = map.get(key);
+            item.exchanges = exchanges;
+            item.frequency = item.frequency + 1;
+            removeNode(item);
+            addNodeWithUpdatedFrequency(item);
         } else {
-            tail = occurrence.prev;
+            if (map.size() >= capacity) {
+                map.remove(head.key);
+                removeNode(head);
+            }
+
+            Node node = new Node(key, exchanges, 1);
+            addNodeWithUpdatedFrequency(node);
+            map.put(key, node);
         }
     }
 
-    private void addOccurrenceWithUpdatedFrequency(Occurrence occurrence) {
+    private void removeNode(Node node) {
+
+        if (node.prev != null) {
+            node.prev.next = node.next;
+        } else {
+            head = node.next;
+        }
+
+        if (node.next != null) {
+            node.next.prev = node.prev;
+        } else {
+            tail = node.prev;
+        }
+    }
+
+    private void addNodeWithUpdatedFrequency(Node node) {
+
         if (tail != null && head != null) {
-            Occurrence temp = head;
-            while (true) {
-                if (temp.frequency > occurrence.frequency) {
+            Node temp = head;
+            while (temp != null) {
+                if (temp.frequency > node.frequency) {
                     if (temp == head) {
-                        occurrence.next = temp;
-                        temp.prev = occurrence;
-                        head = occurrence;
+                        node.next = temp;
+                        temp.prev = node;
+                        head = node;
                         break;
                     } else {
-                        occurrence.next = temp;
-                        occurrence.prev = temp.prev;
-                        temp.prev.next = occurrence;
+                        node.next = temp;
+                        node.prev = temp.prev;
+                        temp.prev.next = node;
                         break;
                     }
                 } else {
                     temp = temp.next;
                     if (temp == null) {
-                        tail.next = occurrence;
-                        occurrence.prev = tail;
-                        occurrence.next = null;
-                        tail = occurrence;
+                        tail.next = node;
+                        node.prev = tail;
+                        node.next = null;
+                        tail = node;
                         break;
                     }
                 }
             }
         } else {
-            tail = occurrence;
+            tail = node;
             head = tail;
         }
     }
@@ -98,7 +104,7 @@ public class LfuCache {
     public void iterateMap() {
         for (int i = 1; i <= map.size(); i++) {
             if (map.get(i) != null) {
-                System.out.println("Exchanges " + i + ": " + map.get(i));
+                System.out.println("Exchange " + i + ": " + map.get(i));
             }
         }
     }

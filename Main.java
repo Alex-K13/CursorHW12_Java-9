@@ -1,7 +1,7 @@
-import controller.Executor;
+import src.controller.Executor;
 
 public class Main {
     public static void main(String[] args) {
-        Executor.run();
+        new Executor().run();
     }
 }
